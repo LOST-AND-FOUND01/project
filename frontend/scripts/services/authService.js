@@ -51,7 +51,12 @@ window.FOUNDIT.authService = (() => {
         }
       }
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const msg = /rate limit/i.test(error.message)
+        ? "Supabase built-in email limit reached (2/hr). Disable 'Confirm email' or connect Custom SMTP in Supabase Auth."
+        : error.message;
+      return { ok: false, error: msg };
+    }
     return {
       ok: true,
       needsEmailConfirmation: !data.session,
@@ -65,7 +70,12 @@ window.FOUNDIT.authService = (() => {
       email: email.trim().toLowerCase(),
       password
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const msg = /rate limit/i.test(error.message)
+        ? "Supabase built-in email limit reached (2/hr). Disable 'Confirm email' or connect Custom SMTP in Supabase Auth."
+        : error.message;
+      return { ok: false, error: msg };
+    }
 
     // Verify account is not suspended
     const { data: prof } = await sb
@@ -94,7 +104,12 @@ window.FOUNDIT.authService = (() => {
         emailRedirectTo: `${window.location.origin}${window.location.pathname}`
       }
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const msg = /rate limit/i.test(error.message)
+        ? "Supabase built-in email limit reached (2/hr). Disable 'Confirm email' or connect Custom SMTP in Supabase Auth."
+        : error.message;
+      return { ok: false, error: msg };
+    }
     return { ok: true };
   }
 
@@ -102,13 +117,23 @@ window.FOUNDIT.authService = (() => {
     const { error } = await client().auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: `${window.location.origin}${window.location.pathname}`
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const msg = /rate limit/i.test(error.message)
+        ? "Supabase built-in email limit reached (2/hr). Disable 'Confirm email' or connect Custom SMTP in Supabase Auth."
+        : error.message;
+      return { ok: false, error: msg };
+    }
     return { ok: true };
   }
 
   async function updatePassword(newPassword) {
     const { error } = await client().auth.updateUser({ password: newPassword });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const msg = /rate limit/i.test(error.message)
+        ? "Supabase built-in email limit reached (2/hr). Disable 'Confirm email' or connect Custom SMTP in Supabase Auth."
+        : error.message;
+      return { ok: false, error: msg };
+    }
     return { ok: true };
   }
 
@@ -124,7 +149,12 @@ window.FOUNDIT.authService = (() => {
         phone: phone.trim()
       })
       .eq("id", userData.user.id);
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const msg = /rate limit/i.test(error.message)
+        ? "Supabase built-in email limit reached (2/hr). Disable 'Confirm email' or connect Custom SMTP in Supabase Auth."
+        : error.message;
+      return { ok: false, error: msg };
+    }
     return { ok: true };
   }
 
