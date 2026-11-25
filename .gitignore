@@ -1,0 +1,9 @@
+# Local backups, environment secrets, and Supabase CLI temp files
+backups/
+.env
+.env.local
+.env.*.local
+supabase/.temp/
+node_modules/
+.DS_Store
+Thumbs.db
