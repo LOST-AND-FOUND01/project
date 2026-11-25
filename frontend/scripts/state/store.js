@@ -15,6 +15,7 @@ window.FOUNDIT.store = (() => {
     currentUser: null,
     items: [],
     myReports: [],
+    mySightings: [],
     claims: [],
     notifications: [],
     announcements: [],
@@ -96,6 +97,11 @@ window.FOUNDIT.store = (() => {
         );
         channel.on(
           "postgres_changes",
+          { event: "*", schema: "public", table: "item_sightings" },
+          () => scheduleRealtimeRefresh()
+        );
+        channel.on(
+          "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications" },
           (payload) => {
             const row = payload.new;
@@ -138,6 +144,9 @@ window.FOUNDIT.store = (() => {
           state.myReports = myReports;
           state.claims = claims;
           state.notifications = notifs;
+          state.mySightings = myReports.length
+            ? await window.FOUNDIT.sightingsService.fetchForMyItems(myReports.map((r) => r.id))
+            : [];
 
           if (user.role === "admin") {
             const bundleRes = await adminService.fetchDashboardBundle();
@@ -149,6 +158,7 @@ window.FOUNDIT.store = (() => {
           }
         } else {
           state.myReports = [];
+          state.mySightings = [];
           state.claims = [];
           state.adminBundle = { reports: [], claims: [], users: [], auditLogs: [] };
           state.notifications = await notificationsService.fetchNotifications(null);
@@ -280,6 +290,18 @@ window.FOUNDIT.store = (() => {
     return res;
   }
 
+  async function postSighting(payload) {
+    const res = await window.FOUNDIT.sightingsService.postSighting(payload);
+    if (res.ok) await refreshAll();
+    return res;
+  }
+
+  async function deleteSighting(sightingId) {
+    const res = await window.FOUNDIT.sightingsService.deleteSighting(sightingId);
+    if (res.ok) await refreshAll();
+    return res;
+  }
+
   async function confirmHandover(claimId, role) {
     const res = await window.FOUNDIT.claimsService.confirmHandover(claimId, role);
     if (res.ok) await refreshAll();
@@ -339,6 +361,8 @@ window.FOUNDIT.store = (() => {
     flagItem,
     deleteItem,
     submitClaim,
+    postSighting,
+    deleteSighting,
     confirmHandover,
     decideClaim,
     adminUpdateReportStatus,

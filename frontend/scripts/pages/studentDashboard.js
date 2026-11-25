@@ -165,7 +165,9 @@ window.FOUNDIT.studentDashboard = (() => {
 
     if (activeTab === "lost") {
       panelHtml = myLost.length
-        ? myLost.map((item) => `
+        ? myLost.map((item) => {
+            const sightings = (state.mySightings || []).filter((s) => s.itemId === item.id);
+            return `
             <div class="action-card">
               <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
                 <div>
@@ -176,6 +178,19 @@ window.FOUNDIT.studentDashboard = (() => {
               </div>
               <h3 style="margin:8px 0">${safe(item.name)}</h3>
               <p>${safe(item.description || "No description provided.")}</p>
+              ${sightings.length ? `
+                <div style="margin-top:10px;padding-top:8px;border-top:1px solid #7A2D4320">
+                  <strong style="font-size:12px">Community Sightings / Found Updates (${sightings.length})</strong>
+                  ${sightings.map((s) => `
+                    <div class="action-card" style="background:#FFF9F7;padding:10px;margin:6px 0">
+                      <span class="tag ${s.statusType === "found_it" ? "found" : "pending"}">${s.statusType === "found_it" ? "FOUND IT" : s.statusType === "spotted_it" ? "SPOTTED" : "TIP"}</span>
+                      <strong style="font-size:12px">⌖ ${safe(s.foundLocation)}</strong>
+                      <span class="muted" style="font-size:11px"> · ${safe(s.senderName)} · ${formatDateTime(s.createdAt)}</span>
+                      <p style="margin:4px 0 0">${safe(s.message)}</p>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
               <div class="action-row">
                 <button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.itemCard.viewItem('${safe(item.id)}')">View details</button>
                 ${item.status === "Open" ? `<button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.studentDashboard.startEditReport('${safe(item.id)}')">Edit</button>` : ""}
@@ -184,7 +199,8 @@ window.FOUNDIT.studentDashboard = (() => {
               </div>
               ${editingItemId === item.id ? renderEditForm(item) : ""}
             </div>
-          `).join("")
+          `;
+          }).join("")
         : '<div class="empty"><strong>No lost reports yet</strong>Use Report Item if you misplaced something on campus.</div>';
     } else if (activeTab === "found") {
       panelHtml = myFound.length
