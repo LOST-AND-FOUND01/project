@@ -166,11 +166,12 @@
           <option value="all">All locations</option>
         </select>
         <select id="statusFilter" aria-label="Filter by status" onchange="window.FOUNDIT.browsePage.render()">
-          <option value="all">All statuses</option>
-          <option value="Open">Open</option>
-          <option value="Under Review">Under Review</option>
-          <option value="Handover Pending">Handover Pending</option>
+          <option value="active">Active feed (Available &amp; Claimed)</option>
+          <option value="Available">Available</option>
+          <option value="Claim Requested">Claim Requested</option>
+          <option value="Claim Approved">Claim Approved</option>
           <option value="Returned">Returned</option>
+          <option value="all">All statuses</option>
         </select>
         <select id="sortFilter" aria-label="Sort reports" onchange="window.FOUNDIT.browsePage.render()">
           <option value="newest">Newest first</option>
@@ -225,7 +226,7 @@
               <input id="itemColour" placeholder="e.g. Black">
             </div>
             <div class="field">
-              <label for="itemLocation">Campus location *</label>
+              <label for="itemLocation">Campus location / block *</label>
               <select id="itemLocation" required>
                 <option value="">Choose location</option>
               </select>
@@ -233,6 +234,10 @@
             <div class="field">
               <label for="itemDate">Date</label>
               <input id="itemDate" type="date">
+            </div>
+            <div class="field full">
+              <label for="itemSpecificLocation">Specific location details (optional — e.g. 2nd floor table, near counter)</label>
+              <input id="itemSpecificLocation" maxlength="200" placeholder="Where exactly on campus was it lost or found?">
             </div>
             <div class="field full">
               <label for="itemDescription">Public description</label>
@@ -369,6 +374,7 @@
   <script defer src="scripts/services/reportsService.js"></script>
   <script defer src="scripts/services/claimsService.js"></script>
   <script defer src="scripts/services/sightingsService.js"></script>
+  <script defer src="scripts/services/chatService.js"></script>
   <script defer src="scripts/services/notificationsService.js"></script>
   <script defer src="scripts/services/adminService.js"></script>
   <script defer src="scripts/state/store.js"></script>

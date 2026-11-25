@@ -17,6 +17,7 @@ window.FOUNDIT.store = (() => {
     myReports: [],
     mySightings: [],
     claims: [],
+    conversations: [],
     notifications: [],
     announcements: [],
     adminBundle: {
@@ -102,6 +103,16 @@ window.FOUNDIT.store = (() => {
         );
         channel.on(
           "postgres_changes",
+          { event: "*", schema: "public", table: "item_conversations" },
+          () => scheduleRealtimeRefresh()
+        );
+        channel.on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "chat_messages" },
+          () => scheduleRealtimeRefresh()
+        );
+        channel.on(
+          "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications" },
           (payload) => {
             const row = payload.new;
@@ -136,14 +147,16 @@ window.FOUNDIT.store = (() => {
         state.items = publicItems;
 
         if (user) {
-          const [myReports, claims, notifs] = await Promise.all([
+          const [myReports, claims, notifs, conversations] = await Promise.all([
             reportsService.fetchMyReports(user.id),
             claimsService.fetchVisibleClaims(),
-            notificationsService.fetchNotifications(user)
+            notificationsService.fetchNotifications(user),
+            window.FOUNDIT.chatService.fetchConversations()
           ]);
           state.myReports = myReports;
           state.claims = claims;
           state.notifications = notifs;
+          state.conversations = conversations;
           state.mySightings = myReports.length
             ? await window.FOUNDIT.sightingsService.fetchForMyItems(myReports.map((r) => r.id))
             : [];
@@ -160,6 +173,7 @@ window.FOUNDIT.store = (() => {
           state.myReports = [];
           state.mySightings = [];
           state.claims = [];
+          state.conversations = [];
           state.adminBundle = { reports: [], claims: [], users: [], auditLogs: [] };
           state.notifications = await notificationsService.fetchNotifications(null);
         }
@@ -308,6 +322,24 @@ window.FOUNDIT.store = (() => {
     return res;
   }
 
+  async function finderDecideClaim(claimId, decision, note = "") {
+    const res = await window.FOUNDIT.claimsService.finderDecideClaim(claimId, decision, note);
+    if (res.ok) await refreshAll();
+    return res;
+  }
+
+  async function confirmItemReturned(itemId) {
+    const res = await window.FOUNDIT.reportsService.confirmItemReturned(itemId);
+    if (res.ok) await refreshAll();
+    return res;
+  }
+
+  async function sendChatMessage(conversationId, body) {
+    const res = await window.FOUNDIT.chatService.sendMessage(conversationId, body);
+    if (res.ok) await refreshAll();
+    return res;
+  }
+
   async function decideClaim(claimId, decision, note = "") {
     const res = await window.FOUNDIT.adminService.decideClaim(claimId, decision, note);
     if (res.ok) await refreshAll();
@@ -364,6 +396,9 @@ window.FOUNDIT.store = (() => {
     postSighting,
     deleteSighting,
     confirmHandover,
+    finderDecideClaim,
+    confirmItemReturned,
+    sendChatMessage,
     decideClaim,
     adminUpdateReportStatus,
     adminModerateReport,

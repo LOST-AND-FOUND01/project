@@ -45,7 +45,7 @@ window.FOUNDIT.browsePage = (() => {
     set("typeFilter", "all");
     set("categoryFilter", "all");
     set("locationFilter", "all");
-    set("statusFilter", "all");
+    set("statusFilter", "active");
     set("sortFilter", "newest");
     render();
   }
@@ -59,16 +59,20 @@ window.FOUNDIT.browsePage = (() => {
     const type = document.getElementById("typeFilter")?.value || "all";
     const category = document.getElementById("categoryFilter")?.value || "all";
     const location = document.getElementById("locationFilter")?.value || "all";
-    const status = document.getElementById("statusFilter")?.value || "all";
+    const status = document.getElementById("statusFilter")?.value || "active";
     const sort = document.getElementById("sortFilter")?.value || "newest";
 
     let results = state.items.filter((x) => {
-      if (x.status === "Archived" && status !== "Archived") return false;
+      if (x.status === "Closed" && status !== "Closed" && status !== "all") return false;
       const matchesType = type === "all" || x.type === type;
       const matchesCat = category === "all" || x.category === category;
       const matchesLoc = location === "all" || x.location === location;
-      const matchesStatus = status === "all" || x.status === status;
-      const haystack = `${x.name} ${x.description} ${x.colour} ${x.location} ${x.category}`.toLowerCase();
+      const matchesStatus = status === "all"
+        ? true
+        : status === "active"
+          ? !["Returned", "Closed"].includes(x.status)
+          : x.status === status;
+      const haystack = `${x.name} ${x.description} ${x.colour} ${x.location} ${x.specificLocation || ""} ${x.category}`.toLowerCase();
       const matchesSearch = !search || haystack.includes(search);
       return matchesType && matchesCat && matchesLoc && matchesStatus && matchesSearch;
     });
@@ -109,8 +113,9 @@ window.FOUNDIT.browsePage = (() => {
 
   function renderSmartMatches() {
     const items = window.FOUNDIT.store.getState().items;
-    const lostItems = items.filter((x) => x.type === "lost" && x.status === "Open");
-    const foundItems = items.filter((x) => x.type === "found" && x.status === "Open");
+    const activeStatuses = ["Available", "Claim Requested"];
+    const lostItems = items.filter((x) => x.type === "lost" && activeStatuses.includes(x.status));
+    const foundItems = items.filter((x) => x.type === "found" && activeStatuses.includes(x.status));
     const output = [];
 
     lostItems.forEach((lost) => {

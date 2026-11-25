@@ -91,8 +91,9 @@ window.FOUNDIT.helpers = (() => {
   function statusTagClass(status) {
     const s = String(status || "").toLowerCase();
     if (s === "returned" || s === "completed" || s === "approved" || s === "active") return "done";
-    if (s === "pending" || s === "handover pending" || s === "under review") return "pending";
-    if (s === "rejected" || s === "suspended" || s === "flagged" || s === "archived") return "rejected";
+    if (s === "available") return "found";
+    if (s === "pending" || s === "claim requested" || s === "claim approved" || s === "handover pending") return "pending";
+    if (s === "rejected" || s === "suspended" || s === "flagged" || s === "closed") return "rejected";
     return "";
   }
 

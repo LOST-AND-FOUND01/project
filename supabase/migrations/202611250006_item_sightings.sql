@@ -42,7 +42,7 @@ CREATE POLICY "item_sightings_insert_active_authenticated"
     AND public.is_active_user()
     AND EXISTS (
       SELECT 1 FROM public.item_reports ir
-      WHERE ir.id = item_id AND ir.status = 'Open'
+      WHERE ir.id = item_id AND ir.status IN ('Open', 'Available', 'Claim Requested')
     )
   );
 

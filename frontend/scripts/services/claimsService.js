@@ -70,9 +70,20 @@ window.FOUNDIT.claimsService = (() => {
     return { ok: true, completed: Boolean(data?.completed), status: data?.status };
   }
 
+  async function finderDecideClaim(claimId, decision, note = "") {
+    const { data, error } = await client().rpc("finder_decide_claim", {
+      p_claim_id: claimId,
+      p_decision: decision,
+      p_note: note
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, decision: data?.decision, conversationId: data?.conversation_id };
+  }
+
   return {
     fetchVisibleClaims,
     submitClaim,
-    confirmHandover
+    confirmHandover,
+    finderDecideClaim
   };
 })();

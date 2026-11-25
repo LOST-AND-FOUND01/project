@@ -24,7 +24,7 @@ window.FOUNDIT.campusMap = (() => {
     if (!titleEl || !countEl || !reportsEl) return;
 
     const items = window.FOUNDIT.store.getState().items.filter(
-      (item) => item.location === zone && item.status !== "Archived"
+      (item) => item.location === zone && !["Closed", "Archived"].includes(item.status)
     );
     titleEl.textContent = zone;
     countEl.textContent = `${items.length} report${items.length === 1 ? "" : "s"} here`;

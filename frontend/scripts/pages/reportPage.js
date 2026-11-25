@@ -122,6 +122,7 @@ window.FOUNDIT.reportPage = (() => {
         const category = document.getElementById("itemCategory").value;
         const colour = document.getElementById("itemColour").value.trim();
         const location = document.getElementById("itemLocation").value;
+        const specificLocation = document.getElementById("itemSpecificLocation")?.value.trim() || "";
         const date = document.getElementById("itemDate").value;
         const description = document.getElementById("itemDescription").value.trim();
         const anonymous = document.getElementById("anonymous").checked;
@@ -142,7 +143,7 @@ window.FOUNDIT.reportPage = (() => {
         }
 
         const res = await window.FOUNDIT.store.createItem(
-          { name, type, category, colour, location, date, description, anonymous },
+          { name, type, category, colour, location, specificLocation, date, description, anonymous },
           selectedFile
         );
 

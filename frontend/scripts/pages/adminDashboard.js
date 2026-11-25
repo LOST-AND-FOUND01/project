@@ -146,7 +146,7 @@ window.FOUNDIT.adminDashboard = (() => {
         `;
       }).join("");
 
-      const openReminders = items.filter((x) => x.status === "Open");
+      const openReminders = items.filter((x) => ["Available", "Claim Requested"].includes(x.status));
 
       panelHtml = `
         <div class="two-col">
@@ -205,8 +205,8 @@ window.FOUNDIT.adminDashboard = (() => {
                         </td>
                         <td>
                           <div class="action-row" style="margin:0">
-                            ${x.status !== "Open" ? `<button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.adminDashboard.changeStatus('${safe(x.id)}','Open')">Approve</button>` : ""}
-                            ${x.status !== "Archived" ? `<button type="button" class="btn btn-soft btn-small" onclick="window.FOUNDIT.adminDashboard.changeStatus('${safe(x.id)}','Archived')">Reject</button>` : ""}
+                            ${x.status !== "Available" ? `<button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.adminDashboard.changeStatus('${safe(x.id)}','Available')">Available</button>` : ""}
+                            ${x.status !== "Closed" ? `<button type="button" class="btn btn-soft btn-small" onclick="window.FOUNDIT.adminDashboard.changeStatus('${safe(x.id)}','Closed')">Close</button>` : ""}
                             <button type="button" class="btn btn-danger btn-small" onclick="window.FOUNDIT.adminDashboard.deleteItem('${safe(x.id)}')">Delete</button>
                           </div>
                         </td>

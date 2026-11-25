@@ -16,6 +16,7 @@ window.FOUNDIT.reportsService = (() => {
       category: row.category,
       colour: row.colour || "",
       location: row.location,
+      specificLocation: row.specific_location || "",
       date: row.incident_date,
       description: row.description || "",
       anonymous: Boolean(row.is_anonymous),
@@ -95,6 +96,7 @@ window.FOUNDIT.reportsService = (() => {
         category: payload.category,
         colour: payload.colour.trim(),
         location: payload.location,
+        specific_location: (payload.specificLocation || "").trim(),
         incident_date: payload.date || new Date().toISOString().slice(0, 10),
         description: payload.description.trim(),
         is_anonymous: Boolean(payload.anonymous)
@@ -155,19 +157,26 @@ window.FOUNDIT.reportsService = (() => {
     return { ok: true };
   }
 
-  async function updateOwnReportDetails(itemId, { name, colour, location, description, anonymous }) {
+  async function updateOwnReportDetails(itemId, { name, colour, location, specificLocation, description, anonymous }) {
     const { error } = await client()
       .from("item_reports")
       .update({
         title: name.trim(),
         colour: colour.trim(),
         location,
+        specific_location: (specificLocation || "").trim(),
         description: description.trim(),
         is_anonymous: Boolean(anonymous)
       })
       .eq("id", itemId);
     if (error) return { ok: false, error: error.message };
     return { ok: true };
+  }
+
+  async function confirmItemReturned(itemId) {
+    const { data, error } = await client().rpc("confirm_item_returned", { p_item_id: itemId });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, status: data?.status || "Returned" };
   }
 
   async function deleteOwnReport(itemId) {
@@ -201,6 +210,7 @@ window.FOUNDIT.reportsService = (() => {
     createReport,
     updateOwnReportStatus,
     updateOwnReportDetails,
+    confirmItemReturned,
     deleteOwnReport,
     flagReport
   };

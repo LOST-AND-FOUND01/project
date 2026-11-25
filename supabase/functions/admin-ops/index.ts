@@ -156,7 +156,15 @@ Deno.serve(async (req) => {
         const { data: claim, error: cErr } = await adminClient.from("claims").select("*").eq("id", claimId).single();
         if (cErr || !claim) return json({ error: "Claim not found" }, 404);
 
-        const { data: item } = await adminClient.from("item_reports").select("title").eq("id", claim.item_id).single();
+        const { data: item } = await adminClient.from("item_reports").select("id, title, reporter_id, status").eq("id", claim.item_id).single();
+        if (!item) return json({ error: "Item not found" }, 404);
+        if (["Returned", "Closed"].includes(item.status)) {
+          return json({ error: `Item is already ${item.status}` }, 400);
+        }
+        if (claim.status !== "Pending") {
+          return json({ error: `Claim already processed (${claim.status})` }, 400);
+        }
+
         const nextHistory = [
           ...(Array.isArray(claim.history) ? claim.history : []),
           { status: decision, at: new Date().toISOString(), note: note || `Reviewed by ${actor.email}` }
@@ -175,7 +183,23 @@ Deno.serve(async (req) => {
         if (updErr) throw updErr;
 
         if (decision === "Approved") {
-          await adminClient.from("item_reports").update({ status: "Handover Pending" }).eq("id", claim.item_id);
+          await adminClient.from("item_reports").update({ status: "Claim Approved" }).eq("id", claim.item_id);
+          await adminClient
+            .from("item_conversations")
+            .upsert(
+              { item_id: item.id, claim_id: claimId, finder_id: item.reporter_id, claimant_id: claim.claimant_id },
+              { onConflict: "claim_id" }
+            );
+        } else {
+          const { count } = await adminClient
+            .from("claims")
+            .select("id", { count: "exact", head: true })
+            .eq("item_id", item.id)
+            .eq("status", "Pending");
+          await adminClient
+            .from("item_reports")
+            .update({ status: (count ?? 0) > 0 ? "Claim Requested" : "Available" })
+            .eq("id", item.id);
         }
 
         await adminClient.from("notifications").insert({
@@ -184,7 +208,7 @@ Deno.serve(async (req) => {
           category: "claim",
           title: `Claim ${decision}: ${item?.title ?? "Item"}`,
           message: decision === "Approved"
-            ? "Your claim was approved! Coordinate handover and confirm receipt in My Dashboard."
+            ? "Your claim was approved! Open Private Finder–Owner Chat in My Dashboard to coordinate handover."
             : `Your claim was rejected.${note ? " Note: " + note : ""}`,
           action_page: "dashboard"
         });
@@ -196,7 +220,7 @@ Deno.serve(async (req) => {
       case "update_report_status": {
         const itemId = String(payload.itemId ?? "");
         const status = String(payload.status ?? "");
-        const allowed = ["Open", "Under Review", "Handover Pending", "Returned", "Archived"];
+        const allowed = ["Available", "Claim Requested", "Claim Approved", "Returned", "Closed"];
         if (!itemId || !allowed.includes(status)) return json({ error: "Invalid status" }, 400);
 
         const { data: item, error: fErr } = await adminClient.from("item_reports").select("title, reporter_id, status").eq("id", itemId).single();
@@ -230,7 +254,7 @@ Deno.serve(async (req) => {
           if (error) throw error;
           await logAudit("MODERATION_CLEARED", "item_report", itemId);
         } else if (modAction === "archive") {
-          const { error } = await adminClient.from("item_reports").update({ is_flagged: false, status: "Archived" }).eq("id", itemId);
+          const { error } = await adminClient.from("item_reports").update({ is_flagged: false, status: "Closed" }).eq("id", itemId);
           if (error) throw error;
           await logAudit("MODERATION_ARCHIVED", "item_report", itemId);
         } else if (modAction === "delete") {

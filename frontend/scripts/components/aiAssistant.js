@@ -1,4 +1,4 @@
-/* FOUNDIT — Floating AI Assistant (Temporary Mock Responses Only — No AI Provider Connected) */
+/* FOUNDIT — Floating Campus FAQ Chatbot (Lightweight Predefined & Live-State Assistant) */
 
 window.FOUNDIT = window.FOUNDIT || {};
 
@@ -10,7 +10,7 @@ window.FOUNDIT.aiAssistant = (() => {
 
   const initialMessage = {
     role: "bot",
-    text: "Hi! I'm the FOUNDIT Campus Assistant (Demo Mode with local mock responses). Ask me about reporting lost/found items, claim verification, or campus zones.",
+    text: "Hi! I'm the FOUNDIT Campus Assistant. Ask me how to report lost/found items, submit a claim, contact a finder/owner via private chat, or where to collect found items.",
     time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   };
 
@@ -29,70 +29,79 @@ window.FOUNDIT.aiAssistant = (() => {
   function clearChat() {
     messages = [{
       role: "bot",
-      text: "Chat cleared. How can I help you with FOUNDIT today? (Mock assistant)",
+      text: "Chat cleared. How can I help you use FOUNDIT today?",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     }];
     lastFailedPrompt = "";
     renderMessages();
   }
 
-  function buildMockReply(promptText) {
+  function buildFaqReply(promptText) {
     const q = promptText.toLowerCase();
     const state = window.FOUNDIT.store.getState();
-    const openItems = state.items.filter((i) => i.status === "Open");
+    const availableItems = state.items.filter((i) => ["Available", "Claim Requested"].includes(i.status));
 
     if (q.includes("simulate error") || q.includes("test error")) {
-      return { error: "Simulated assistant connection error (demo). Click Retry to test recovery." };
+      return { error: "Simulated assistant connection error. Click Retry to test recovery." };
     }
 
-    // Dynamic zone lookup from local state
+    // Dynamic zone lookup from live database state
     const matchedZone = window.FOUNDIT.MOCK_DATA.CAMPUS_ZONES.find((z) =>
       q.includes(z.toLowerCase())
     );
     if (matchedZone) {
-      const zoneItems = openItems.filter((i) => i.location === matchedZone);
+      const zoneItems = availableItems.filter((i) => i.location === matchedZone);
       if (zoneItems.length === 0) {
-        return { text: `There are currently 0 open items reported in ${matchedZone}. You can submit a new report under "Report Item" or click ${matchedZone} on the campus map.` };
+        return { text: `There are currently 0 active items reported in ${matchedZone}. You can post a report under "Report Item" or click ${matchedZone} on the campus map.` };
       }
-      const list = zoneItems.slice(0, 3).map((i) => `• ${i.name} (${i.type})`).join("\n");
-      return { text: `Found ${zoneItems.length} open report(s) in ${matchedZone}:\n${list}\nOpen the Browse page and filter by "${matchedZone}" to view details.` };
+      const list = zoneItems.slice(0, 3).map((i) => `• ${i.name} (${i.type} · ${i.status})`).join("\n");
+      return { text: `Active report(s) in ${matchedZone} (${zoneItems.length}):\n${list}\nOpen Browse and filter by "${matchedZone}" to view details.` };
     }
 
-    if (q.includes("report") || q.includes("lost") || q.includes("found")) {
+    if (q.includes("contact") || q.includes("chat") || q.includes("message") || q.includes("phone") || q.includes("email")) {
       return {
-        text: "To report an item: open 'Report Item' in the top bar, choose 'I LOST' or 'I FOUND', select the category and JCET campus zone, optionally upload a photo (< 700 KB), and submit. Avoid sharing private ID numbers publicly."
+        text: "For privacy, finder/owner phone numbers and emails are hidden publicly. To contact the finder: open a Found item, click 'Claim', and once the finder approves your claim, the Private Finder–Owner Chat unlocks inside My Dashboard -> Private Chat!"
       };
     }
 
-    if (q.includes("claim") || q.includes("verify") || q.includes("ownership")) {
+    if (q.includes("collect") || q.includes("where") || q.includes("pickup") || q.includes("desk")) {
       return {
-        text: "To claim a Found item: click 'View details' -> 'This is mine — submit claim', and write a brief ownership explanation (like a sticker, dent, or note inside). Demo Admin reviews pending claims before handover."
+        text: "Each Found item's details page displays the campus building/block and optional specific spot where it was found. Once your claim is approved by the finder, use Private Chat in My Dashboard to agree on the exact pickup spot and time (or meet at the Student Welfare Desk in Academic Block)."
       };
     }
 
-    if (q.includes("handover") || q.includes("two-party") || q.includes("return")) {
+    if (q.includes("lost")) {
       return {
-        text: "Two-party handover ensures safe returns: once a claim is Approved, the Finder clicks 'I handed over the item' and the Claimant clicks 'I received the item' in My Dashboard. Once both confirm, the item becomes 'Returned'."
+        text: "To report a lost item: sign in via Account, open 'Report Item', choose 'I LOST this item', select the category and campus zone, add optional specific location details or a photo, and submit. Other students can then post sighting updates with locations on your item."
       };
     }
 
-    if (q.includes("zone") || q.includes("map") || q.includes("campus")) {
+    if (q.includes("found")) {
       return {
-        text: "Supported JCET campus zones: Academic Block, Library, Computer Labs, Canteen, Auditorium, Playground, and Parking Area. You can click any building on the Home page map to filter reports."
+        text: "To report a found item: sign in, open 'Report Item', select 'I FOUND this item', enter the campus zone and specific spot where you found it, optionally attach a photo, and submit. You are saved as the finder and can approve or reject incoming claims in My Dashboard."
       };
     }
 
-    if (q.includes("stat") || q.includes("how many") || q.includes("open")) {
-      const lost = state.items.filter((i) => i.type === "lost").length;
-      const found = state.items.filter((i) => i.type === "found").length;
-      const returned = state.items.filter((i) => i.status === "Returned").length;
+    if (q.includes("claim")) {
       return {
-        text: `Current demo campus totals: ${state.items.length} reports (${lost} lost, ${found} found, ${returned} returned). Visit Browse to search all listings.`
+        text: "To claim a Found item: sign in (as a user other than the finder), open the item in Browse, click 'Claim' (or 'This is mine — submit claim'), and describe unique identifying marks/proof. The finder reviews your request in My Dashboard."
+      };
+    }
+
+    if (q.includes("return") || q.includes("handover") || q.includes("status")) {
+      return {
+        text: "Item statuses progress from Available -> Claim Requested -> Claim Approved -> Returned (or Closed). Approving a claim does NOT auto-mark it Returned; after physical handover, the finder clicks 'Confirm Item Handed Over' in My Dashboard."
+      };
+    }
+
+    if (q.includes("use") || q.includes("how") || q.includes("faq") || q.includes("help")) {
+      return {
+        text: "Quick Guide:\n1) Sign up or log in under Account.\n2) Use Browse or the Campus Map to search items.\n3) Report lost/found items under Report Item.\n4) Submit claims on Found items or post sightings on Lost items.\n5) Coordinate handover in Private Chat once approved, then confirm return!"
       };
     }
 
     return {
-      text: "Mock AI Reply: I can help you report lost/found items, check open reports by JCET zone (e.g. 'open items in Library'), or explain claim verification and two-party handover."
+      text: "I can help with: reporting a lost or found item, claiming an item, contacting a finder/owner via private chat, finding collection locations, or checking active items in a JCET zone (e.g. 'items in Library')."
     };
   }
 
@@ -109,7 +118,7 @@ window.FOUNDIT.aiAssistant = (() => {
 
     setTimeout(() => {
       isLoading = false;
-      const reply = buildMockReply(text);
+      const reply = buildFaqReply(text);
       const replyTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       if (reply.error) {
         lastFailedPrompt = text;
@@ -119,7 +128,7 @@ window.FOUNDIT.aiAssistant = (() => {
         messages.push({ role: "bot", text: reply.text, time: replyTime });
       }
       renderMessages();
-    }, 550);
+    }, 350);
   }
 
   function retryLast() {
@@ -144,7 +153,7 @@ window.FOUNDIT.aiAssistant = (() => {
     list.innerHTML = messages.map((m) => {
       const formatted = safe(m.text).replace(/\n/g, "<br>");
       const retryBtn = m.role === "error"
-        ? `<div style="margin-top:8px"><button class="btn btn-small btn-outline" onclick="window.FOUNDIT.aiAssistant.retryLast()">Retry</button></div>`
+        ? `<div style="margin-top:8px"><button type="button" class="btn btn-small btn-outline" onclick="window.FOUNDIT.aiAssistant.retryLast()">Retry</button></div>`
         : "";
       return `
         <div class="ai-msg ${m.role}">

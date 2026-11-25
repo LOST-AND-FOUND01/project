@@ -1,7 +1,4 @@
-/* FOUNDIT — Shared Domain Constants & Phase-3 Mock AI Prompts
- * Functional app data (users, reports, claims, notifications, audit logs)
- * is stored in and retrieved from Supabase PostgreSQL & Storage.
- */
+/* FOUNDIT — Shared Domain Constants & Predefined Campus FAQ Prompts */
 
 window.FOUNDIT = window.FOUNDIT || {};
 
@@ -26,19 +23,18 @@ window.FOUNDIT.MOCK_DATA = {
   ],
 
   STATUSES: [
-    "Open",
-    "Under Review",
-    "Handover Pending",
+    "Available",
+    "Claim Requested",
+    "Claim Approved",
     "Returned",
-    "Archived"
+    "Closed"
   ],
 
-  // Temporary mock assistant prompts (AI provider integration is deferred to Phase 3)
   AI_SUGGESTED_QUESTIONS: [
     "How do I report a lost item?",
-    "How does claim verification work?",
-    "Show open items in Library",
-    "How does two-party handover work?",
-    "What campus zones are supported?"
+    "How do I report a found item?",
+    "How do I claim an item?",
+    "How do I contact the finder or owner?",
+    "Where do I collect a found item?"
   ]
 };

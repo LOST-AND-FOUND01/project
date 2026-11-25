@@ -7,7 +7,8 @@ window.FOUNDIT.homePage = (() => {
 
   function render() {
     const state = window.FOUNDIT.store.getState();
-    const visibleItems = state.items.filter((x) => x.status !== "Archived");
+    const visibleItems = state.items.filter((x) => x.status !== "Closed");
+    const activeItems = visibleItems.filter((x) => x.status !== "Returned");
 
     const setVal = (id, val) => {
       const el = document.getElementById(id);
@@ -35,7 +36,7 @@ window.FOUNDIT.homePage = (() => {
         : "";
     }
 
-    const recent = [...visibleItems].reverse().slice(0, 3);
+    const recent = [...activeItems].slice(0, 3);
     const grid = document.getElementById("recentGrid");
     if (grid) {
       if (state.loading && !visibleItems.length) {

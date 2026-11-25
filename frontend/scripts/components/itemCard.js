@@ -14,6 +14,15 @@ window.FOUNDIT.itemCard = (() => {
       ? `<img src="${safe(item.photo)}" alt="${safe(item.name)}" loading="lazy">`
       : `<span>${item.type === "lost" ? "⌖" : "✧"}</span>`;
     const statusClass = statusTagClass(item.status);
+    const user = window.FOUNDIT.store.getCurrentUser();
+    const canClaim = item.type === "found"
+      && ["Available", "Claim Requested"].includes(item.status)
+      && (!user || user.id !== item.reporterId);
+    const canSight = item.type === "lost"
+      && ["Available", "Claim Requested"].includes(item.status);
+    const locLine = item.specificLocation
+      ? `${safe(item.location)} — ${safe(item.specificLocation)}`
+      : safe(item.location);
 
     return `
       <article class="card">
@@ -26,14 +35,14 @@ window.FOUNDIT.itemCard = (() => {
           </div>
           <h3>${safe(item.name)}</h3>
           <p>${safe(item.category)} · ${safe(item.colour || "Colour not specified")}</p>
-          <p>⌖ ${safe(item.location)} · ${safe(item.date)}</p>
+          <p>⌖ ${locLine} · ${safe(item.date)}</p>
           <p>${safe(item.description || "No description provided.")}</p>
           <div class="card-footer">
             <button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.itemCard.viewItem('${safe(item.id)}')">View details</button>
-            ${item.type === "found" && item.status === "Open"
-              ? `<button type="button" class="btn btn-small" onclick="window.FOUNDIT.itemCard.openClaim('${safe(item.id)}')">Claim</button>`
+            ${canClaim
+              ? `<button type="button" class="btn btn-small" onclick="window.FOUNDIT.itemCard.openClaim('${safe(item.id)}')">Claim Item</button>`
               : ""}
-            ${item.type === "lost" && item.status === "Open"
+            ${canSight
               ? `<button type="button" class="btn btn-small" onclick="window.FOUNDIT.itemCard.viewItem('${safe(item.id)}', true)">I found it / Update</button>`
               : ""}
           </div>
@@ -103,7 +112,7 @@ window.FOUNDIT.itemCard = (() => {
     const statusClass = statusTagClass(x.status);
     const zones = window.FOUNDIT.MOCK_DATA.CAMPUS_ZONES;
 
-    const sightingFormHtml = x.status === "Open"
+    const sightingFormHtml = ["Available", "Claim Requested"].includes(x.status)
       ? (user
           ? `
             <form id="itemSightingForm" style="margin-top:12px">
@@ -138,6 +147,10 @@ window.FOUNDIT.itemCard = (() => {
           `)
       : "";
 
+    const canClaimModal = x.type === "found"
+      && ["Available", "Claim Requested"].includes(x.status)
+      && (!user || user.id !== x.reporterId);
+
     document.getElementById("itemDetails").innerHTML = `
       <div style="margin-bottom:10px">
         <span class="tag ${safe(x.type)}">${safe(x.type.toUpperCase())}</span>
@@ -146,12 +159,15 @@ window.FOUNDIT.itemCard = (() => {
       <h2 style="margin-bottom:12px">${safe(x.name)}</h2>
       ${isSafeImg(x.photo) ? `<img src="${safe(x.photo)}" alt="${safe(x.name)}" style="width:100%;max-height:240px;object-fit:contain;border-radius:8px;margin-bottom:12px;border:1px solid #7A2D4320">` : ""}
       <p class="muted" style="margin:6px 0"><strong>Category:</strong> ${safe(x.category)} · <strong>Colour:</strong> ${safe(x.colour || "Not specified")}</p>
-      <p class="muted" style="margin:6px 0"><strong>Location:</strong> ${safe(x.location)} · <strong>Date:</strong> ${safe(x.date)}</p>
+      <p class="muted" style="margin:6px 0"><strong>Campus Location:</strong> ${safe(x.location)} · <strong>Date:</strong> ${safe(x.date)}</p>
+      ${x.specificLocation ? `<p class="muted" style="margin:6px 0"><strong>Specific Spot / Collection Info:</strong> ${safe(x.specificLocation)}</p>` : ""}
       <p style="margin:12px 0;line-height:1.6">${safe(x.description || "No public description provided.")}</p>
-      <p class="muted" style="font-size:12px"><strong>Reporter:</strong> ${x.anonymous ? "Anonymous" : safe(x.reporter || "Campus member")}</p>
+      <p class="muted" style="font-size:12px"><strong>${x.type === "found" ? "Finder" : "Reporter"}:</strong> ${x.anonymous ? "Anonymous" : safe(x.reporter || "Campus member")} <span style="opacity:.8">(Contact info hidden — communicate via in-app claim &amp; chat)</span></p>
+      ${x.status === "Returned" ? '<div class="notice" style="margin:12px 0"><strong>Returned:</strong> This item has already been handed back to its owner. New claims are disabled.</div>' : ""}
+      ${x.status === "Claim Approved" ? '<div class="notice" style="margin:12px 0"><strong>Claim Approved:</strong> Handover is currently being coordinated between finder and owner.</div>' : ""}
       <div class="action-row" style="margin-top:14px">
-        ${x.type === "found" && x.status === "Open"
-          ? `<button type="button" class="btn" onclick="window.FOUNDIT.itemCard.openClaim('${safe(x.id)}')">This is mine — submit claim</button>`
+        ${canClaimModal
+          ? `<button type="button" class="btn" onclick="window.FOUNDIT.itemCard.openClaim('${safe(x.id)}')">Claim Item — This is mine</button>`
           : ""}
         <button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.itemCard.flagListing('${safe(x.id)}')">Flag for moderation</button>
       </div>
