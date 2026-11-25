@@ -97,6 +97,18 @@ window.FOUNDIT.helpers = (() => {
     return "";
   }
 
+  function avatarInitials(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "CM";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function renderAvatar(name, size = 24) {
+    const initials = safe(avatarInitials(name));
+    return `<span class="avatar-badge" style="width:${size}px;height:${size}px;font-size:${Math.max(10, Math.round(size * 0.42))}px" aria-hidden="true">${initials}</span>`;
+  }
+
   return {
     safe,
     uid,
@@ -107,6 +119,7 @@ window.FOUNDIT.helpers = (() => {
     isValidEmail,
     validatePassword,
     readImageFile,
-    statusTagClass
+    statusTagClass,
+    renderAvatar
   };
 })();

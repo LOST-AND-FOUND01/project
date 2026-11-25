@@ -204,6 +204,12 @@ window.FOUNDIT.reportsService = (() => {
     return { ok: true };
   }
 
+  async function getSafeReporterProfile(itemId) {
+    const { data, error } = await client().rpc("get_safe_reporter_profile", { p_item_id: itemId });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, profile: data };
+  }
+
   return {
     fetchPublicListings,
     fetchMyReports,
@@ -211,6 +217,7 @@ window.FOUNDIT.reportsService = (() => {
     updateOwnReportStatus,
     updateOwnReportDetails,
     confirmItemReturned,
+    getSafeReporterProfile,
     deleteOwnReport,
     flagReport
   };

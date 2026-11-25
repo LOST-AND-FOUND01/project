@@ -3,7 +3,7 @@
 window.FOUNDIT = window.FOUNDIT || {};
 
 window.FOUNDIT.itemCard = (() => {
-  const { safe, statusTagClass, formatDateTime, openModal, closeModal, toast } = window.FOUNDIT.helpers;
+  const { safe, statusTagClass, formatDateTime, openModal, closeModal, toast, renderAvatar } = window.FOUNDIT.helpers;
 
   function isSafeImg(url) {
     return /^https:\/\/|^data:image\//i.test(String(url || ""));
@@ -23,6 +23,16 @@ window.FOUNDIT.itemCard = (() => {
     const locLine = item.specificLocation
       ? `${safe(item.location)} — ${safe(item.specificLocation)}`
       : safe(item.location);
+    const reporterName = item.anonymous ? "Campus Member" : (item.reporter || "Campus Member");
+    const finderLine = item.type === "found"
+      ? `<div style="margin:6px 0 2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+           <span class="muted" style="font-size:12px">Found by:</span>
+           <button type="button" class="finder-chip" onclick="window.FOUNDIT.itemCard.viewReporterProfile('${safe(item.id)}')">
+             ${renderAvatar(reporterName, 20)}
+             <span>${safe(reporterName)}</span>
+           </button>
+         </div>`
+      : "";
 
     return `
       <article class="card">
@@ -36,6 +46,7 @@ window.FOUNDIT.itemCard = (() => {
           <h3>${safe(item.name)}</h3>
           <p>${safe(item.category)} · ${safe(item.colour || "Colour not specified")}</p>
           <p>⌖ ${locLine} · ${safe(item.date)}</p>
+          ${finderLine}
           <p>${safe(item.description || "No description provided.")}</p>
           <div class="card-footer">
             <button type="button" class="btn btn-outline btn-small" onclick="window.FOUNDIT.itemCard.viewItem('${safe(item.id)}')">View details</button>
@@ -162,7 +173,14 @@ window.FOUNDIT.itemCard = (() => {
       <p class="muted" style="margin:6px 0"><strong>Campus Location:</strong> ${safe(x.location)} · <strong>Date:</strong> ${safe(x.date)}</p>
       ${x.specificLocation ? `<p class="muted" style="margin:6px 0"><strong>Specific Spot / Collection Info:</strong> ${safe(x.specificLocation)}</p>` : ""}
       <p style="margin:12px 0;line-height:1.6">${safe(x.description || "No public description provided.")}</p>
-      <p class="muted" style="font-size:12px"><strong>${x.type === "found" ? "Finder" : "Reporter"}:</strong> ${x.anonymous ? "Anonymous" : safe(x.reporter || "Campus member")} <span style="opacity:.8">(Contact info hidden — communicate via in-app claim &amp; chat)</span></p>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0">
+        <span class="muted" style="font-size:13px"><strong>${x.type === "found" ? "Found by:" : "Reported by:"}</strong></span>
+        <button type="button" class="finder-chip" onclick="window.FOUNDIT.itemCard.viewReporterProfile('${safe(x.id)}')">
+          ${renderAvatar(x.anonymous ? "Campus Member" : (x.reporter || "Campus Member"), 24)}
+          <span>${safe(x.anonymous ? "Campus Member" : (x.reporter || "Campus Member"))}</span>
+        </button>
+        <span class="muted" style="font-size:11px">(Click for safe public profile)</span>
+      </div>
       ${x.status === "Returned" ? '<div class="notice" style="margin:12px 0"><strong>Returned:</strong> This item has already been handed back to its owner. New claims are disabled.</div>' : ""}
       ${x.status === "Claim Approved" ? '<div class="notice" style="margin:12px 0"><strong>Claim Approved:</strong> Handover is currently being coordinated between finder and owner.</div>' : ""}
       <div class="action-row" style="margin-top:14px">
@@ -287,9 +305,44 @@ window.FOUNDIT.itemCard = (() => {
     });
   }
 
+  async function viewReporterProfile(itemId) {
+    const content = document.getElementById("publicProfileContent");
+    if (!content) return;
+    content.innerHTML = '<p class="muted">Loading public profile...</p>';
+    openModal("publicProfileModal");
+
+    const res = await window.FOUNDIT.reportsService.getSafeReporterProfile(itemId);
+    if (!res.ok || !res.profile) {
+      content.innerHTML = `<p class="muted">${safe(res.error || "Public profile unavailable.")}</p>`;
+      return;
+    }
+
+    const p = res.profile;
+    const joined = p.member_since
+      ? new Date(p.member_since).toLocaleDateString(undefined, { year: "numeric", month: "short" })
+      : "Campus community";
+
+    content.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        ${renderAvatar(p.display_name, 48)}
+        <div>
+          <h3 style="margin-bottom:4px">${safe(p.display_name)}</h3>
+          <p class="muted" style="font-size:13px">${safe(p.department)}</p>
+        </div>
+      </div>
+      <div class="action-card" style="margin:0">
+        <p><strong>Verification:</strong> <span class="tag ${p.verified ? "done" : "pending"}">${p.verified ? "Verified Campus Member ✓" : "Campus Member"}</span></p>
+        <p><strong>Member since:</strong> ${safe(joined)}</p>
+        ${p.total_reports !== null ? `<p><strong>Public reports:</strong> ${Number(p.total_reports)} (${Number(p.returned_reports || 0)} returned)</p>` : ""}
+        <p class="muted" style="font-size:12px;margin-top:10px">Private contact details (email, phone, USN) are hidden. Use in-app claims and private chat to coordinate item handover.</p>
+      </div>
+    `;
+  }
+
   return {
     renderCard,
     viewItem,
+    viewReporterProfile,
     removeSighting,
     flagListing,
     openClaim,

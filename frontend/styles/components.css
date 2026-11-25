@@ -613,6 +613,37 @@
   flex: 1;
 }
 
+.avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #C94655;
+  color: #FFFAF8;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.4px;
+}
+
+.finder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px 4px 5px;
+  border-radius: 999px;
+  background: #F9E8E5;
+  border: 1px solid #7A2D4325;
+  color: #7A2D43;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.finder-chip:hover {
+  border-color: #C94655;
+  background: #F5D5D8;
+}
+
 @media (max-width: 780px) {
   .chat-shell {
     grid-template-columns: 1fr;

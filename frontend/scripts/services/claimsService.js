@@ -11,9 +11,12 @@ window.FOUNDIT.claimsService = (() => {
       id: row.id,
       itemId: row.item_id,
       claimantId: row.claimant_id,
-      itemName: item?.title || "Campus Item",
-      itemLocation: item?.location || "",
-      itemStatus: item?.status || "",
+      itemName: row.item_title || item?.title || "Campus Item",
+      itemLocation: row.item_location || item?.location || "",
+      itemSpecificLocation: row.item_specific_location || "",
+      itemStatus: row.item_status || item?.status || "",
+      finderId: row.finder_id || item?.reporter_id || null,
+      finderName: row.finder_name || "Campus Member",
       message: row.ownership_explanation,
       handoverPreference: row.handover_preference || "",
       status: row.status,
@@ -31,10 +34,7 @@ window.FOUNDIT.claimsService = (() => {
     const { data: userData } = await sb.auth.getUser();
     if (!userData?.user) return [];
 
-    const { data, error } = await sb
-      .from("claims")
-      .select("*, item_reports(title, location, status, reporter_id)")
-      .order("created_at", { ascending: false });
+    const { data, error } = await sb.rpc("get_my_claims_with_finder");
     if (error) throw error;
     return (data || []).map(mapClaimRow);
   }

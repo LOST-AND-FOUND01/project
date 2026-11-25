@@ -10,11 +10,6 @@
 </head>
 
 <body>
-  <div class="demo-ribbon">
-    <span><strong>SUPABASE CONNECTED:</strong> Auth, PostgreSQL, Private Storage &amp; Admin Audit Logs are live. (AI Assistant remains mock until Phase 3.)</span>
-    <button type="button" onclick="window.FOUNDIT.router.showPage('auth')">Account &amp; Auth</button>
-  </div>
-
   <header>
     <div class="nav">
       <div class="logo" onclick="window.FOUNDIT.router.showPage('home')">FOUND<span>IT.</span></div>
@@ -304,7 +299,7 @@
     </section>
   </main>
 
-  <footer>FOUNDIT · Your Campus. Your Lost &amp; Found. · JCET Hubballi · Powered by Supabase</footer>
+  <footer>FOUNDIT · Your Campus. Your Lost &amp; Found. · JCET Hubballi</footer>
   <div id="toast" role="status" aria-live="polite"></div>
 
   <!-- ITEM DETAILS MODAL -->
@@ -338,6 +333,17 @@
     </div>
   </div>
 
+  <!-- PUBLIC REPORTER PROFILE MODAL (Safe fields only, stacked above itemModal) -->
+  <div class="modal" id="publicProfileModal" style="z-index:45">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2>Campus Member Profile</h2>
+        <button type="button" class="close" onclick="window.FOUNDIT.helpers.closeModal('publicProfileModal')">×</button>
+      </div>
+      <div id="publicProfileContent"></div>
+    </div>
+  </div>
+
   <!-- FLOATING AI ASSISTANT (Mock until Phase 3) -->
   <button type="button" class="ai-fab" aria-label="Open FOUNDIT AI Assistant" onclick="window.FOUNDIT.aiAssistant.toggle()">
     💬 Ask FOUNDIT AI
@@ -347,7 +353,7 @@
     <div class="ai-header">
       <div>
         <h3>FOUNDIT Assistant</h3>
-        <small>Mock AI Responses · Phase 3 Pending</small>
+        <small>Campus Lost &amp; Found Help</small>
       </div>
       <div class="ai-header-actions">
         <button type="button" onclick="window.FOUNDIT.aiAssistant.clearChat()">Clear</button>

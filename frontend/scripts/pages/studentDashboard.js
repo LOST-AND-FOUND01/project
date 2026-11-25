@@ -3,7 +3,7 @@
 window.FOUNDIT = window.FOUNDIT || {};
 
 window.FOUNDIT.studentDashboard = (() => {
-  const { safe, formatDateTime, statusTagClass, toast } = window.FOUNDIT.helpers;
+  const { safe, formatDateTime, statusTagClass, toast, renderAvatar } = window.FOUNDIT.helpers;
   let activeTab = "found"; // found | lost | claims | chat | notifications | profile
   let notifFilter = "all";
   let editingItemId = null;
@@ -337,6 +337,13 @@ window.FOUNDIT.studentDashboard = (() => {
                 <span class="tag ${statusTagClass(claim.status)}">${safe(claim.status)}</span>
               </div>
               ${renderTimeline(claim)}
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0">
+                <span class="muted" style="font-size:13px"><strong>Found by:</strong></span>
+                <span class="finder-chip" style="cursor:default">
+                  ${renderAvatar(claim.finderName, 22)}
+                  <span>${safe(claim.finderName)}</span>
+                </span>
+              </div>
               <p><strong>Your ownership proof:</strong> ${safe(claim.message)}</p>
               <p class="muted">Preferred handover: ${safe(claim.handoverPreference || claim.itemLocation || "Campus Welfare Desk")}</p>
               ${claim.adminNote ? `<p class="status-line">Reviewer note: ${safe(claim.adminNote)}</p>` : ""}
@@ -386,9 +393,12 @@ window.FOUNDIT.studentDashboard = (() => {
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #7A2D4320;padding-bottom:10px">
                   <div>
                     <h3 style="font-size:16px">${safe(selectedConv.item_title)}</h3>
-                    <p class="muted" style="font-size:12px">
-                      Chatting with <strong>${safe(selectedConv.other_user_name)}</strong> · ⌖ ${safe(selectedConv.item_location)}${selectedConv.item_specific_location ? ` — ${safe(selectedConv.item_specific_location)}` : ""}
-                    </p>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
+                      ${renderAvatar(selectedConv.other_user_name, 24)}
+                      <span class="muted" style="font-size:12px">
+                        <strong>${selectedConv.my_role === "claimant" ? "Finder:" : "Owner:"}</strong> ${safe(selectedConv.other_user_name)} · ⌖ ${safe(selectedConv.item_location)}${selectedConv.item_specific_location ? ` — ${safe(selectedConv.item_specific_location)}` : ""}
+                      </span>
+                    </div>
                   </div>
                   <div class="action-row" style="margin:0">
                     <span class="tag ${statusTagClass(selectedConv.item_status)}">${safe(selectedConv.item_status)}</span>

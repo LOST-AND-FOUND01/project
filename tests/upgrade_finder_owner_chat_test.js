@@ -70,6 +70,16 @@ async function api(endpoint, { method = "GET", key = ANON_KEY, token = null, bod
     foundItemId = postRes.data[0].id;
     pass("Found item created as Available with specific_location");
 
+    // 1b. Verify get_safe_reporter_profile exposes only safe fields (never email/phone/usn)
+    const safeProf = await api("/rest/v1/rpc/get_safe_reporter_profile", {
+      method: "POST", token: owner.token, body: { p_item_id: foundItemId }
+    });
+    assert.ok(safeProf.ok && safeProf.data.display_name === "Finder User");
+    assert.strictEqual(safeProf.data.email, undefined);
+    assert.strictEqual(safeProf.data.phone, undefined);
+    assert.strictEqual(safeProf.data.usn, undefined);
+    pass("get_safe_reporter_profile exposes finder name without sensitive fields");
+
     // 2. Owner posts Lost item & Finder posts sighting update on it
     const lostRes = await api("/rest/v1/item_reports", {
       method: "POST", token: owner.token, headers: { Prefer: "return=representation" },
@@ -103,7 +113,9 @@ async function api(endpoint, { method = "GET", key = ANON_KEY, token = null, bod
 
     const checkItemReq = await api(`/rest/v1/item_reports?id=eq.${foundItemId}`, { token: finder.token });
     assert.strictEqual(checkItemReq.data[0].status, "Claim Requested");
-    pass("Claim moves item to Claim Requested and notifies finder");
+    const myClaimsWithFinder = await api("/rest/v1/rpc/get_my_claims_with_finder", { method: "POST", token: owner.token });
+    assert.ok(myClaimsWithFinder.ok && myClaimsWithFinder.data.some((c) => c.id === claimId && c.finder_name === "Finder User"));
+    pass("Claim moves item to Claim Requested, notifies finder & shows finder_name");
 
     // 5. Owner cannot approve their own claim
     const ownerSelfApprove = await api("/rest/v1/rpc/finder_decide_claim", {
