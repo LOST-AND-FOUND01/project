@@ -67,23 +67,42 @@ Deno.serve(async (req) => {
 
   if (error) return json({ error: error.message }, 500);
 
-  const allowedRows = (rows ?? []).filter((row) => {
+  // Also check item_reports.image_path directly in case a report has image_path set
+  const { data: reportRows } = await adminClient
+    .from("item_reports")
+    .select("id, image_path, status, reporter_id")
+    .in("id", itemIds)
+    .neq("image_path", "");
+
+  const pathByItem = new Map<string, string>();
+
+  for (const row of rows ?? []) {
     const rep = Array.isArray(row.item_reports) ? row.item_reports[0] : row.item_reports;
-    if (!rep) return false;
-    if (rep.status !== "Archived") return true;
-    return callerIsAdmin || (callerId && rep.reporter_id === callerId);
-  });
+    if (!rep) continue;
+    const isAllowed = rep.status !== "Closed" || callerIsAdmin || (callerId && rep.reporter_id === callerId);
+    if (isAllowed && row.storage_path) {
+      pathByItem.set(row.item_id, row.storage_path);
+    }
+  }
+
+  for (const rep of reportRows ?? []) {
+    if (pathByItem.has(rep.id)) continue;
+    const isAllowed = rep.status !== "Closed" || callerIsAdmin || (callerId && rep.reporter_id === callerId);
+    if (isAllowed && rep.image_path) {
+      pathByItem.set(rep.id, rep.image_path);
+    }
+  }
 
   const urls: Record<string, string> = {};
-  if (allowedRows.length > 0) {
-    const paths = allowedRows.map((r) => r.storage_path);
+  const entries = [...pathByItem.entries()];
+  if (entries.length > 0) {
     const { data: signed, error: signErr } = await adminClient.storage
       .from("item-photos")
-      .createSignedUrls(paths, 600);
+      .createSignedUrls(entries.map(([, p]) => p), 600);
     if (!signErr && signed) {
       signed.forEach((entry, idx) => {
         if (entry?.signedUrl) {
-          urls[allowedRows[idx].item_id] = entry.signedUrl;
+          urls[entries[idx][0]] = entry.signedUrl;
         }
       });
     }

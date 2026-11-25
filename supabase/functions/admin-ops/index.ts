@@ -92,11 +92,11 @@ Deno.serve(async (req) => {
     switch (action) {
       case "get_dashboard_bundle": {
         const [reportsRes, claimsRes, usersRes, rolesRes, logsRes, imagesRes] = await Promise.all([
-          adminClient.from("item_reports").select("*").order("created_at", { ascending: false }),
-          adminClient.from("claims").select("*, item_reports(title, location)").order("created_at", { ascending: false }),
-          adminClient.from("profiles").select("id, full_name, usn, email, department, phone, email_verified, account_status, created_at").order("created_at", { ascending: false }),
+          adminClient.from("item_reports").select("*").order("seq_id", { ascending: false }),
+          adminClient.from("claims").select("*, item_reports(title, location, seq_id)").order("seq_id", { ascending: false }),
+          adminClient.from("profiles").select("id, seq_id, full_name, usn, email, department, phone, email_verified, account_status, created_at").order("seq_id", { ascending: true }),
           adminClient.from("user_roles").select("user_id, role"),
-          adminClient.from("admin_audit_logs").select("*").order("created_at", { ascending: false }).limit(150),
+          adminClient.from("admin_audit_logs").select("*").order("seq_id", { ascending: false }).limit(150),
           adminClient.from("item_images").select("item_id, storage_path")
         ]);
 
@@ -106,14 +106,22 @@ Deno.serve(async (req) => {
         if (rolesRes.error) throw rolesRes.error;
         if (logsRes.error) throw logsRes.error;
 
+        const pathByItem = new Map<string, string>();
+        for (const i of imagesRes.data ?? []) {
+          if (i.storage_path) pathByItem.set(i.item_id, i.storage_path);
+        }
+        for (const r of reportsRes.data ?? []) {
+          if (!pathByItem.has(r.id) && r.image_path) pathByItem.set(r.id, r.image_path);
+        }
+
         const photoUrls: Record<string, string> = {};
-        const imgRows = imagesRes.data ?? [];
-        if (imgRows.length > 0) {
+        const imgEntries = [...pathByItem.entries()];
+        if (imgEntries.length > 0) {
           const { data: signed } = await adminClient.storage
             .from("item-photos")
-            .createSignedUrls(imgRows.map((i) => i.storage_path), 600);
+            .createSignedUrls(imgEntries.map(([, p]) => p), 600);
           (signed ?? []).forEach((s, idx) => {
-            if (s?.signedUrl) photoUrls[imgRows[idx].item_id] = s.signedUrl;
+            if (s?.signedUrl) photoUrls[imgEntries[idx][0]] = s.signedUrl;
           });
         }
 
